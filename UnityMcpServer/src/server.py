@@ -70,26 +70,46 @@ class RobustUnityConnection:
         start_time = time.time()
 
         try:
+            # Convert old format to new format if needed
+            if "tool" in command_data and "action" in command_data:
+                # Convert from old format: {"tool": "manage_editor", "action": "get_state", ...}
+                # To new format: {"type": "manage_editor", "params": {"action": "get_state", ...}}
+                tool_name = command_data.pop("tool")
+                params = command_data  # All remaining data becomes params
+
+                unity_command = {
+                    "type": tool_name,
+                    "params": params
+                }
+            else:
+                # Already in correct format or special command
+                unity_command = command_data
+
             # Send command
-            command_json = json.dumps(command_data)
-            enhanced_logger.info(f"Sending Unity command: {command_data.get('tool', 'unknown')}.{command_data.get('action', 'unknown')}")
+            command_json = json.dumps(unity_command)
+            enhanced_logger.info(f"Sending Unity command: {unity_command.get('type', 'unknown')}")
 
             self.socket.send(command_json.encode('utf-8') + b'\n')
 
+            # Debug: Log what we're sending
+            enhanced_logger.info(f"Sent JSON: {command_json}")
+
             # Receive response
             response_data = self.socket.recv(4096).decode('utf-8')
+            enhanced_logger.info(f"Received response: {response_data}")
             response = json.loads(response_data)
 
             elapsed = time.time() - start_time
 
-            if response.get("success"):
+            if response.get("status") == "success":
                 self.successful_commands += 1
                 enhanced_logger.info(f"Unity command completed successfully in {elapsed:.2f}s")
+                # Convert to old format for compatibility
+                return {"success": True, "data": response.get("result", {})}
             else:
                 self.failed_commands += 1
                 enhanced_logger.warning(f"Unity command failed: {response.get('error', 'Unknown error')}")
-
-            return response
+                return {"success": False, "error": response.get("error", "Unknown error")}
 
         except socket.timeout:
             self.failed_commands += 1
@@ -107,7 +127,26 @@ class RobustUnityConnection:
 
     def ping(self):
         """Test connection with a simple ping."""
-        return self.send_command({"tool": "ping", "action": "test"})
+        # Use simple ping that the bridge understands
+        if not self.connected:
+            if not self.connect():
+                return {"success": False, "error": "Not connected to Unity"}
+
+        try:
+            # Send simple ping command (not JSON)
+            self.socket.send(b'ping')
+
+            # Receive response
+            response_data = self.socket.recv(4096).decode('utf-8')
+            enhanced_logger.info(f"Ping response: {response_data}")
+            response = json.loads(response_data)
+
+            return response
+
+        except Exception as e:
+            enhanced_logger.error(f"Ping failed: {e}")
+            self.connected = False
+            return {"success": False, "error": str(e)}
 
     def get_metrics(self):
         """Get connection metrics."""
@@ -157,8 +196,11 @@ def test_unity_connection():
 
         # Test ping
         ping_result = _unity_connection.ping()
-        if ping_result.get("success"):
+        if ping_result.get("status") == "success":
             print(f"✅ Unity Bridge: RESPONDING")
+            pong_message = ping_result.get("result", {}).get("message", "")
+            if pong_message:
+                print(f"   Response: {pong_message}")
         else:
             print(f"⚠️  Unity Bridge: NOT RESPONDING")
             print(f"   Error: {ping_result.get('error', 'Unknown')}")

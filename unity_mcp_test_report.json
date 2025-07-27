@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-07-27 14:52:09",
+  "tests": [
+    {
+      "name": "Basic Connection",
+      "status": "PASS",
+      "message": "Successfully connected to Unity on port 6400"
+    },
+    {
+      "name": "Unity Bridge Response",
+      "status": "PASS",
+      "message": "Unity Bridge responded successfully",
+      "response": {
+        "status": "success",
+        "result": {
+          "message": "pong"
+        }
+      }
+    },
+    {
+      "name": "Unity Bridge Package",
+      "status": "WARN",
+      "message": "Unity MCP Bridge package not found in common locations"
+    }
+  ],
+  "summary": {
+    "total_tests": 3,
+    "passed": 2,
+    "failed": 0,
+    "warned": 1,
+    "overall_status": "PASS"
+  }
+}
