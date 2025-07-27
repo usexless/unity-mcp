@@ -12,6 +12,7 @@ from enhanced_logging import enhanced_logger, LogContext
 from timeout_manager import with_timeout, OperationType
 from validation import validate_tool_parameters
 from config import config
+from error_recovery import error_recovery_manager
 
 def register_manage_script_tools(mcp: FastMCP):
     """Register all script management tools with the MCP server."""
@@ -105,13 +106,48 @@ def register_manage_script_tools(mcp: FastMCP):
 
         except (UnityOperationError, ResourceError) as e:
             duration = time.time() - start_time
-            enhanced_logger.log_tool_result(
-                "manage_script", action, False,
-                error_message=e.message,
-                request_id=request_id,
-                duration=duration
+
+            # Attempt error recovery
+            recovery_result = await error_recovery_manager.handle_error(
+                e, log_context, {"action": action, "name": name, "path": path}
             )
-            return create_error_response(e)
+
+            if recovery_result["success"]:
+                enhanced_logger.log_tool_result(
+                    "manage_script", action, True,
+                    result_summary=f"Script '{name}' {action} completed after recovery",
+                    request_id=request_id,
+                    duration=duration,
+                    recovery_used=True
+                )
+                return {
+                    "success": True,
+                    "message": recovery_result["message"],
+                    "data": recovery_result.get("data", {}),
+                    "recovery_info": {
+                        "recovery_applied": True,
+                        "original_error": e.message,
+                        "recovery_method": recovery_result.get("data", {}).get("recovery_method", "unknown")
+                    }
+                }
+            else:
+                enhanced_logger.log_tool_result(
+                    "manage_script", action, False,
+                    error_message=f"Error and recovery failed: {e.message}",
+                    request_id=request_id,
+                    duration=duration,
+                    recovery_attempted=True,
+                    recovery_failed=True
+                )
+
+                # Return enhanced error response with recovery information
+                error_response = create_error_response(e)
+                error_response["recovery_info"] = {
+                    "recovery_attempted": True,
+                    "recovery_successful": False,
+                    "recovery_message": recovery_result.get("message", "Recovery failed")
+                }
+                return error_response
 
         except Exception as e:
             duration = time.time() - start_time

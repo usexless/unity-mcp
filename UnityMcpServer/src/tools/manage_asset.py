@@ -14,6 +14,8 @@ from enhanced_logging import enhanced_logger, LogContext
 from timeout_manager import with_timeout, OperationType
 from validation import validate_tool_parameters
 from config import config
+from error_recovery import error_recovery_manager
+from advanced_logging import advanced_log_manager, LogLevel, LogCategory
 
 def register_manage_asset_tools(mcp: FastMCP):
     """Registers the manage_asset tool with the MCP server."""
