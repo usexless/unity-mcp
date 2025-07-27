@@ -29,11 +29,22 @@ pip install -r requirements.txt
 
 ### 2. Unity Setup
 
-1. **Install Unity MCP Bridge** in your Unity project:
-   - Add the Unity MCP Bridge package to your project
-   - Configure connection settings (default: localhost:6400)
+**Install Unity MCP Bridge** (choose one method):
 
-2. **Start Unity Editor** with your project
+**Option A: Manual Copy (Recommended)**
+```bash
+# Copy bridge to your Unity project
+xcopy "D:\unity\VoiceGame\unity-mcp\UnityMcpBridge" "YourUnityProject\Assets\UnityMcpBridge" /E /I
+```
+
+**Option B: Package Manager**
+1. Open Unity Package Manager (`Window` → `Package Manager`)
+2. Click `+` → `Add package from git URL...`
+3. Enter: `https://github.com/usexless/unity-mcp.git?path=/UnityMcpBridge`
+
+**Verify Installation:**
+- Unity Console should show: `Unity MCP Bridge: Ready for connections`
+- Menu `Tools` → `Unity MCP Bridge` should be available
 
 ### 3. Start the Server
 
@@ -186,23 +197,30 @@ python test_integration.py
 
 ### Common Issues
 
+**Unity Bridge Not Responding:**
+```
+⚠️  Unity Bridge: NOT RESPONDING
+   Error: Command timed out
+```
+**Solution:**
+1. Install Unity MCP Bridge (see [installation guide](UNITY_BRIDGE_INSTALLATION.md))
+2. Check Unity Console for bridge messages
+3. Restart Unity if bridge doesn't start
+
 **Connection Refused:**
 ```
-Error: Could not connect to Unity at localhost:6400
+❌ Unity Connection: FAILED
 ```
-**Solution:** Verify Unity Editor is running and MCP Bridge is active.
+**Solution:**
+1. Verify Unity Editor is running
+2. Check if port 6400 is blocked by firewall
+3. Try different port in bridge configuration
 
-**Timeout Errors:**
+**Bridge Installation Issues:**
 ```
-Error: Operation timed out after 30 seconds
+Error: Could not find Unity MCP Bridge
 ```
-**Solution:** Check Unity Editor performance or increase timeout in config.
-
-**Permission Errors:**
-```
-Error: Access denied to Unity project files
-```
-**Solution:** Run with appropriate permissions or check file paths.
+**Solution:** Follow the [Unity Bridge Installation Guide](UNITY_BRIDGE_INSTALLATION.md)
 
 ## 📚 Documentation
 
