@@ -35,36 +35,48 @@ pip install -r requirements.txt
 - Unity Console: `Unity MCP Bridge: Server started on port 6400`
 - Menu: `Tools` → `Unity MCP Bridge` available
 
-### 3. Start Server & Test
+### 3. Test Connection (Optional)
 
 ```bash
 cd src
-python server.py
+python server.py  # Full server with connection test
+# OR
+python mcp_server.py  # MCP client compatible version
 ```
 
-**Expected Output:**
-```
-✅ Unity Connection: SUCCESS
-✅ Unity Bridge: RESPONDING
-✅ Server Status: READY
-```
+**For MCP Clients:** Use `mcp_server.py` (no startup tests, better compatibility)
 
-**If Bridge Not Responding:**
-- Check Unity Console for: `UnityMcpBridge started on port 6400`
-- Install bridge via Package Manager (step 2)
-- Restart Unity Editor
+## 🔧 MCP Client Integration
 
-## 🔧 Claude Desktop Integration
+### Claude Desktop / Augment Code
 
-Add to your Claude Desktop config:
+Add to your MCP client config:
 
 ```json
 {
   "mcpServers": {
     "unity-mcp": {
       "command": "python",
-      "args": ["path/to/unity-mcp/UnityMcpServer/src/server.py"],
-      "cwd": "path/to/unity-mcp/UnityMcpServer"
+      "args": ["D:/unity/VoiceGame/unity-mcp/UnityMcpServer/src/mcp_server.py"],
+      "cwd": "D:/unity/VoiceGame/unity-mcp/UnityMcpServer"
+    }
+  }
+}
+```
+
+### Alternative (UV Package Manager)
+
+```json
+{
+  "mcpServers": {
+    "unityMCP": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "D:/unity/VoiceGame/unity-mcp/UnityMcpServer/src",
+        "run",
+        "mcp_server.py"
+      ]
     }
   }
 }

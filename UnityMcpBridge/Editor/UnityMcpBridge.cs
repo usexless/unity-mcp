@@ -189,6 +189,9 @@ namespace UnityMcpBridge.Editor
                             commandQueue[commandId] = (commandText, tcs);
                         }
 
+                        // Force immediate processing of commands
+                        EditorApplication.QueuePlayerLoopUpdate();
+
                         string response = await tcs.Task;
                         byte[] responseBytes = System.Text.Encoding.UTF8.GetBytes(response);
                         await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
@@ -217,6 +220,9 @@ namespace UnityMcpBridge.Editor
                     string id = kvp.Key;
                     string commandText = kvp.Value.commandJson;
                     TaskCompletionSource<string> tcs = kvp.Value.tcs;
+
+                    // Debug logging
+                    Debug.Log($"[UnityMcpBridge] Processing command: {commandText}");
 
                     try
                     {
@@ -280,7 +286,9 @@ namespace UnityMcpBridge.Editor
                         }
                         else
                         {
+                            Debug.Log($"[UnityMcpBridge] Executing command: {command.type}");
                             string responseJson = ExecuteCommand(command);
+                            Debug.Log($"[UnityMcpBridge] Command response: {responseJson}");
                             tcs.SetResult(responseJson);
                         }
                     }
