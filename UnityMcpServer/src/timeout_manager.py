@@ -152,16 +152,35 @@ class TimeoutManager:
                 loop = asyncio.get_event_loop()
                 return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
             
+            # Simple timeout implementation without asyncio.run to avoid event loop conflicts
+            start_time = time.time()
             try:
-                return asyncio.run(asyncio.wait_for(run_with_timeout(), timeout=timeout))
-            except asyncio.TimeoutError:
-                logger.error(f"Sync operation '{op_name}' timed out after {timeout}s")
-                raise UnityTimeoutError(
-                    f"Operation '{op_name}' timed out after {timeout} seconds",
-                    timeout_seconds=timeout,
-                    operation=op_name,
-                    context={"args_count": len(args), "kwargs_keys": list(kwargs.keys())}
-                )
+                result = func(*args, **kwargs)
+                elapsed = time.time() - start_time
+
+                # Check if we exceeded timeout
+                if elapsed > timeout:
+                    logger.error(f"Sync operation '{op_name}' exceeded timeout: {elapsed:.2f}s > {timeout}s")
+                    raise UnityTimeoutError(
+                        f"Operation '{op_name}' timed out after {elapsed:.2f} seconds (limit: {timeout}s)",
+                        timeout_seconds=timeout,
+                        operation=op_name,
+                        context={"elapsed_time": elapsed, "args_count": len(args), "kwargs_keys": list(kwargs.keys())}
+                    )
+
+                return result
+            except Exception as e:
+                elapsed = time.time() - start_time
+                # Convert timeout-related exceptions
+                if "timeout" in str(e).lower():
+                    logger.error(f"Sync operation '{op_name}' timed out: {str(e)}")
+                    raise UnityTimeoutError(
+                        f"Operation '{op_name}' timed out: {str(e)}",
+                        timeout_seconds=timeout,
+                        operation=op_name,
+                        context={"elapsed_time": elapsed, "error": str(e)}
+                    )
+                raise
         
         return wrapper
     

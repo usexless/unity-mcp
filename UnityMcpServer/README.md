@@ -37,6 +37,13 @@ pip install -r requirements.txt
 
 ### 3. Start the Server
 
+**Option A: Simple Server (Recommended)**
+```bash
+cd src
+python simple_server.py
+```
+
+**Option B: Full Server (Advanced)**
 ```bash
 cd src
 python server.py
@@ -44,22 +51,12 @@ python server.py
 
 ### 4. Test Connection
 
-```bash
-# Check server health
-curl http://localhost:6500/health
-```
+The server runs via stdio (standard input/output) for MCP protocol communication. To test:
 
-**Expected Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "status": "healthy",
-    "connection": {"healthy": true},
-    "server": {"version": "2.0.0"}
-  }
-}
-```
+1. **With MCP Client**: Use Claude Desktop or another MCP client
+2. **Direct Test**: The server will respond to MCP protocol messages on stdin/stdout
+
+**Health Check**: Use the `health_check` tool through your MCP client to verify Unity connection.
 
 ## 🛠️ Available Tools
 
@@ -153,10 +150,8 @@ export LOG_LEVEL=INFO
 
 ## 🔍 Health Monitoring
 
-### Health Check Endpoint
-```bash
-curl http://localhost:6500/health
-```
+### Health Check Tool
+Use the `health_check` tool through your MCP client:
 
 **Response:**
 ```json
@@ -165,16 +160,10 @@ curl http://localhost:6500/health
   "data": {
     "status": "healthy",
     "connection": {
-      "healthy": true,
-      "metrics": {
-        "total_connections": 5,
-        "successful_commands": 42,
-        "average_response_time": 0.15
-      }
+      "healthy": true
     },
     "server": {
-      "version": "2.0.0",
-      "uptime": 3600.0
+      "version": "2.0.0"
     }
   }
 }

@@ -39,15 +39,17 @@ pip install -r requirements.txt
 # Navigate to the server directory
 cd src
 
-# Start the MCP server
+# Start the simple MCP server (recommended)
+python simple_server.py
+
+# OR start the full server (advanced)
 python server.py
 ```
 
 You should see output like:
 ```
-Unity MCP Server starting...
-Server listening on port 6500
-Waiting for Unity connection on port 6400...
+Unity MCP Server (Simple Version) starting...
+2025-07-27 14:13:50,729 - unity-mcp-server - INFO - Unity MCP Server initialized
 ```
 
 ## Step 4: Connect Unity
@@ -59,9 +61,7 @@ Waiting for Unity connection on port 6400...
 ## Step 5: Test the Connection
 
 ### Health Check
-```bash
-curl http://localhost:6500/health
-```
+Use the `health_check` tool through your MCP client.
 
 Expected response:
 ```json
@@ -75,7 +75,7 @@ Expected response:
 ```
 
 ### Test a Simple Operation
-You can test the server by using it with an LLM client or by making direct HTTP requests.
+You can test the server by using it with an LLM client that supports MCP protocol.
 
 ## Using with LLM Clients
 

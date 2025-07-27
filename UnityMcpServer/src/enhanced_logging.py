@@ -178,9 +178,16 @@ class UnityMcpLogger:
         extra = {}
         if context:
             extra.update(asdict(context))
+
+        # Handle special logging parameters separately to avoid conflicts
+        exc_info = kwargs.pop('exc_info', None)
+        exception = kwargs.pop('exception', None)
+
+        # Add remaining kwargs to extra
         extra.update(kwargs)
-        
-        self.logger.log(level, message, extra=extra)
+
+        # Log with proper exc_info handling
+        self.logger.log(level, message, extra=extra, exc_info=exc_info)
     
     def info(self, message: str, context: LogContext = None, **kwargs):
         """Log info message with context."""
@@ -193,17 +200,13 @@ class UnityMcpLogger:
     def error(self, message: str, context: LogContext = None, exception: Exception = None, **kwargs):
         """Log error message with context and exception info."""
         if exception:
-            # Avoid overwriting existing exc_info
-            if "exc_info" not in kwargs:
-                kwargs["exc_info"] = (type(exception), exception, exception.__traceback__)
+            kwargs["exc_info"] = (type(exception), exception, exception.__traceback__)
         self.log_with_context(logging.ERROR, message, context, **kwargs)
-    
+
     def critical(self, message: str, context: LogContext = None, exception: Exception = None, **kwargs):
         """Log critical message with context and exception info."""
         if exception:
-            # Avoid overwriting existing exc_info
-            if "exc_info" not in kwargs:
-                kwargs["exc_info"] = (type(exception), exception, exception.__traceback__)
+            kwargs["exc_info"] = (type(exception), exception, exception.__traceback__)
         self.log_with_context(logging.CRITICAL, message, context, **kwargs)
     
     def log_tool_call(self, tool_name: str, action: str, parameters: Dict[str, Any], 
