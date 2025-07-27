@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Unity MCP Server - Production Ready Version
+
+A Model Context Protocol (MCP) server for Unity Editor automation.
+Compatible with MCP clients like Claude Desktop.
+"""
+
+import sys
+import os
+
+# Ensure UTF-8 encoding for stdout/stderr on Windows
+if sys.platform == "win32":
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
 from mcp.server.fastmcp import FastMCP, Context, Image
 import logging
 import time
@@ -179,7 +197,7 @@ def test_unity_connection():
     """Test Unity connection on startup and provide detailed feedback."""
     global _unity_connection
 
-    print("\n🔍 Testing Unity Connection...")
+    print("\n[INFO] Testing Unity Connection...")
     print("=" * 50)
 
     # Initialize connection
@@ -190,42 +208,42 @@ def test_unity_connection():
 
     # Test connection
     if _unity_connection.connect():
-        print(f"✅ Unity Connection: SUCCESS")
+        print(f"[SUCCESS] Unity Connection: SUCCESS")
         print(f"   Host: {_unity_connection.host}")
         print(f"   Port: {_unity_connection.port}")
 
         # Test ping
         ping_result = _unity_connection.ping()
         if ping_result.get("status") == "success":
-            print(f"✅ Unity Bridge: RESPONDING")
+            print(f"[SUCCESS] Unity Bridge: RESPONDING")
             pong_message = ping_result.get("result", {}).get("message", "")
             if pong_message:
                 print(f"   Response: {pong_message}")
         else:
-            print(f"⚠️  Unity Bridge: NOT RESPONDING")
+            print(f"[WARNING] Unity Bridge: NOT RESPONDING")
             print(f"   Error: {ping_result.get('error', 'Unknown')}")
-            print(f"\n🔧 Troubleshooting:")
+            print(f"\n[INFO] Troubleshooting:")
             print(f"   1. Check Unity Console for bridge messages:")
             print(f"      - 'UnityMcpBridge started on port 6400'")
             print(f"      - Any error messages")
             print(f"   2. Install Unity MCP Bridge:")
-            print(f"      - Window → Package Manager")
-            print(f"      - + → Add package from git URL")
+            print(f"      - Window -> Package Manager")
+            print(f"      - + -> Add package from git URL")
             print(f"      - https://github.com/usexless/unity-mcp.git?path=/UnityMcpBridge")
             print(f"   3. Restart Unity Editor")
-            print(f"   4. Check Tools → Unity MCP Bridge menu")
+            print(f"   4. Check Tools -> Unity MCP Bridge menu")
 
-        print(f"✅ Server Status: READY")
+        print(f"[SUCCESS] Server Status: READY")
 
     else:
-        print(f"❌ Unity Connection: FAILED")
+        print(f"[ERROR] Unity Connection: FAILED")
         print(f"   Host: {_unity_connection.host}")
         print(f"   Port: {_unity_connection.port}")
-        print(f"⚠️  Make sure:")
+        print(f"[WARNING] Make sure:")
         print(f"   - Unity Editor is running")
         print(f"   - Unity MCP Bridge is installed and active")
         print(f"   - Port {_unity_connection.port} is not blocked")
-        print(f"✅ Server Status: READY (will retry on first request)")
+        print(f"[SUCCESS] Server Status: READY (will retry on first request)")
 
     print("=" * 50)
     return _unity_connection
