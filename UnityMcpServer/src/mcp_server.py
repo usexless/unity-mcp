@@ -23,9 +23,10 @@ from dataclasses import dataclass
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Dict, Any, List
 
-# Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Configure detailed logging for debugging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("unity-mcp-server")
+logger.setLevel(logging.DEBUG)
 
 # Initialize FastMCP server
 mcp = FastMCP("Unity MCP Server")
@@ -42,7 +43,7 @@ class UnityConnection:
         """Connect to Unity."""
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(10.0)
+            self.socket.settimeout(60.0)  # Increased from 10 to 60 seconds for Unity operations
             self.socket.connect((self.host, self.port))
             self.connected = True
             logger.info(f"Connected to Unity at {self.host}:{self.port}")
@@ -57,7 +58,9 @@ class UnityConnection:
         if not self.connected:
             if not self.connect():
                 return {"success": False, "error": "Not connected to Unity"}
-        
+
+        start_time = time.time()
+
         try:
             # Convert old format to Unity Bridge format if needed
             if "tool" in command_data and "action" in command_data:
@@ -67,25 +70,41 @@ class UnityConnection:
                     "type": tool_name,
                     "params": params
                 }
+                logger.info(f"Converted command: {tool_name} -> {unity_command}")
             else:
                 unity_command = command_data
-            
+                logger.info(f"Using command as-is: {unity_command}")
+
             # Send command
             command_json = json.dumps(unity_command)
+            logger.info(f"Sending to Unity: {command_json}")
             self.socket.send(command_json.encode('utf-8') + b'\n')
-            
+
             # Receive response
+            logger.info("Waiting for Unity response...")
             response_data = self.socket.recv(4096).decode('utf-8')
+            elapsed = time.time() - start_time
+            logger.info(f"Received from Unity after {elapsed:.2f}s: {response_data}")
+
             response = json.loads(response_data)
-            
+
             # Convert to old format for compatibility
             if response.get("status") == "success":
+                logger.info(f"Command successful in {elapsed:.2f}s")
                 return {"success": True, "data": response.get("result", {})}
             else:
+                logger.error(f"Command failed in {elapsed:.2f}s: {response.get('error', 'Unknown error')}")
                 return {"success": False, "error": response.get("error", "Unknown error")}
-                
+
+        except socket.timeout:
+            elapsed = time.time() - start_time
+            logger.error(f"Unity command timed out after {elapsed:.2f}s")
+            self.connected = False
+            return {"success": False, "error": f"Command timed out after {elapsed:.2f}s"}
+
         except Exception as e:
-            logger.error(f"Unity command failed: {e}")
+            elapsed = time.time() - start_time
+            logger.error(f"Unity command failed after {elapsed:.2f}s: {e}")
             self.connected = False
             return {"success": False, "error": str(e)}
     
@@ -107,12 +126,12 @@ def health_check() -> Dict[str, Any]:
     """Check the health status of the Unity MCP Server and Unity connection."""
     try:
         logger.info("Health check requested")
-        
+
         # Test Unity connection
         connection_healthy = unity_connection.connected
         if not connection_healthy:
             connection_healthy = unity_connection.connect()
-        
+
         # Test ping if connected
         ping_result = None
         if connection_healthy:
@@ -123,7 +142,7 @@ def health_check() -> Dict[str, Any]:
                 connection_healthy = ping_result.get("status") == "success"
             except:
                 connection_healthy = False
-        
+
         health_data = {
             "status": "healthy" if connection_healthy else "degraded",
             "connection": {
@@ -135,19 +154,53 @@ def health_check() -> Dict[str, Any]:
                 "version": "2.0.0"
             }
         }
-        
+
         if ping_result:
             health_data["ping_response"] = ping_result
-        
+
         logger.info(f"Health check completed - Status: {health_data['status']}")
-        
+
         return {
             "success": True,
             "data": health_data
         }
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+# Simple test tool for debugging
+@mcp.tool()
+def test_unity_command() -> Dict[str, Any]:
+    """Test a simple Unity command to debug communication issues."""
+    try:
+        logger.info("Testing simple Unity command...")
+
+        # Test the simplest possible Unity command
+        command_data = {
+            "tool": "manage_editor",
+            "action": "get_state"
+        }
+
+        logger.info(f"Testing command: {command_data}")
+        response = unity_connection.send_command(command_data)
+
+        logger.info(f"Test command response: {response}")
+
+        return {
+            "success": True,
+            "data": {
+                "test_command": command_data,
+                "response": response,
+                "message": "Test completed - check logs for details"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Test command failed: {e}")
         return {
             "success": False,
             "error": str(e)
