@@ -162,6 +162,16 @@ def test_unity_connection():
         else:
             print(f"⚠️  Unity Bridge: NOT RESPONDING")
             print(f"   Error: {ping_result.get('error', 'Unknown')}")
+            print(f"\n🔧 Troubleshooting:")
+            print(f"   1. Check Unity Console for bridge messages:")
+            print(f"      - 'UnityMcpBridge started on port 6400'")
+            print(f"      - Any error messages")
+            print(f"   2. Install Unity MCP Bridge:")
+            print(f"      - Window → Package Manager")
+            print(f"      - + → Add package from git URL")
+            print(f"      - https://github.com/usexless/unity-mcp.git?path=/UnityMcpBridge")
+            print(f"   3. Restart Unity Editor")
+            print(f"   4. Check Tools → Unity MCP Bridge menu")
 
         print(f"✅ Server Status: READY")
 
