@@ -37,17 +37,19 @@ pip install -r requirements.txt
 
 ### 3. Start the Server
 
-**Option A: Simple Server (Recommended)**
-```bash
-cd src
-python simple_server.py
-```
-
-**Option B: Full Server (Advanced)**
+**Option A: Full Server (Recommended) ✅**
 ```bash
 cd src
 python server.py
 ```
+*Features: Enhanced logging, monitoring, validation, connection testing*
+
+**Option B: Simple Server (Basic)**
+```bash
+cd src
+python simple_server.py
+```
+*Features: Basic functionality, minimal dependencies*
 
 ### 4. Test Connection
 

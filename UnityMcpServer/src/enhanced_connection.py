@@ -1,6 +1,8 @@
 """
 Enhanced Unity connection management with health monitoring,
 retry logic, and robust error handling.
+
+This module provides compatibility with the server.py connection system.
 """
 
 import socket
@@ -17,6 +19,69 @@ from config import config
 from exceptions import ConnectionError, TimeoutError, UnityOperationError
 from enhanced_logging import enhanced_logger, LogContext
 from timeout_manager import with_timeout, OperationType
+
+# Import the connection from server.py for compatibility
+_server_connection = None
+
+def get_enhanced_unity_connection():
+    """Get the Unity connection instance from server.py."""
+    global _server_connection
+    if _server_connection is None:
+        # Import here to avoid circular imports
+        try:
+            from server import get_unity_connection
+            _server_connection = get_unity_connection()
+        except ImportError:
+            # Fallback to creating a simple connection
+            _server_connection = SimpleUnityConnection()
+    return _server_connection
+
+class SimpleUnityConnection:
+    """Simple Unity connection for fallback compatibility."""
+    def __init__(self, host="localhost", port=6400):
+        self.host = host
+        self.port = port
+        self.socket = None
+        self.connected = False
+
+    def connect(self):
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(10.0)
+            self.socket.connect((self.host, self.port))
+            self.connected = True
+            return True
+        except:
+            self.connected = False
+            return False
+
+    def send_command(self, command_data):
+        if not self.connected:
+            if not self.connect():
+                return {"success": False, "error": "Not connected to Unity"}
+
+        try:
+            command_json = json.dumps(command_data)
+            self.socket.send(command_json.encode('utf-8') + b'\n')
+            response = self.socket.recv(4096).decode('utf-8')
+            return json.loads(response)
+        except Exception as e:
+            self.connected = False
+            return {"success": False, "error": str(e)}
+
+    def ping(self):
+        return self.send_command({"tool": "ping", "action": "test"})
+
+    def get_metrics(self):
+        return {"connected": self.connected}
+
+    def disconnect(self):
+        if self.socket:
+            try:
+                self.socket.close()
+            except:
+                pass
+        self.connected = False
 
 
 class ConnectionState(Enum):
